@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudaku — All Features Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:20px}
+h1{text-align:center;font-size:1.8rem;margin-bottom:4px;color:#38bdf8}
+.subtitle{text-align:center;color:#64748b;margin-bottom:20px;font-size:.85rem}
+.app{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:20px}
+@media(max-width:800px){.app{grid-template-columns:1fr}}
+
+/* Board */
+.board-area{display:flex;flex-direction:column;align-items:center;gap:12px}
+.board{display:grid;grid-template-columns:repeat(9,44px);grid-template-rows:repeat(9,44px);gap:1px;background:#334155;border:2px solid #475569;border-radius:6px;overflow:hidden}
+.cell{display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:600;cursor:pointer;transition:background .15s;position:relative;background:#1e293b}
+.cell.given{color:#93c5fd;font-weight:700;cursor:default}
+.cell.user{color:#4ade80}
+.cell.error{color:#f87171;background:#3b1111}
+.cell.selected{background:#1e3a5f}
+.cell.peer{background:#172033}
+.cell.highlight{background:#1a3520}
+.cell.conflict{box-shadow:inset 0 0 0 2px #ef4444}
+.cell:hover:not(.given){background:#253349}
+.pencil{font-size:.5rem;display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;color:#64748b;line-height:1}
+.pencil span{display:flex;align-items:center;justify-content:center}
+
+/* Box borders */
+.cell:nth-child(3n){border-right:2px solid #475569}
+.cell:nth-child(n+19):nth-child(-n+27){border-bottom:2px solid #475569}
+.cell:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid #475569}
+
+/* Controls */
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{padding:8px 16px;border:1px solid #475569;border-radius:6px;background:#1e293b;color:#e2e8f0;cursor:pointer;font-size:.8rem;transition:all .15s}
+.btn:hover{background:#334155;border-color:#60a5fa}
+.btn.active{background:#1e3a5f;border-color:#60a5fa;color:#60a5fa}
+.btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.btn.primary:hover{background:#1d4ed8}
+.numpad{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.numpad .btn{padding:10px 0;text-align:center;font-size:1.1rem;font-weight:600;min-width:36px}
+
+/* Panels */
+.panels{display:flex;flex-direction:column;gap:12px}
+.panel{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px;font-size:.82rem}
+.panel h3{color:#38bdf8;font-size:.9rem;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.panel h3 span{font-size:1rem}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.info-grid dt{color:#94a3b8}
+.info-grid dd{color:#e2e8f0;font-weight:500;text-align:right}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600}
+.tag.easy{background:#064e3b;color:#6ee7b7}
+.tag.medium{background:#422006;color:#fbbf24}
+.tag.hard{background:#7c2d12;color:#fb923c}
+.tag.expert{background:#4c1d95;color:#c4b5fd}
+.tag.evil{background:#7f1d1d;color:#fca5a5}
+.technique-list{display:flex;flex-wrap:wrap;gap:4px}
+.technique-tag{padding:2px 6px;border-radius:3px;font-size:.7rem;background:#334155;color:#94a3b8}
+.hint-box{background:#172554;border:1px solid #1e40af;border-radius:6px;padding:10px;margin-top:6px;color:#93c5fd;font-size:.8rem;line-height:1.4}
+.hint-level{color:#60a5fa;font-weight:600;font-size:.7rem;text-transform:uppercase;margin-bottom:2px}
+.log{max-height:160px;overflow-y:auto;font-family:monospace;font-size:.72rem;color:#94a3b8;line-height:1.5;white-space:pre-wrap}
+.steps-list{max-height:200px;overflow-y:auto;font-size:.75rem;line-height:1.6}
+.steps-list .step{display:flex;gap:6px}
+.steps-list .step-num{color:#64748b;min-width:24px}
+.steps-list .step-tech{color:#38bdf8}
+.steps-list .step-desc{color:#94a3b8}
+.bar{height:6px;background:#334155;border-radius:3px;margin-top:6px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#2563eb,#38bdf8);transition:width .3s;border-radius:3px}
+.timer{font-family:monospace;font-size:1.2rem;color:#38bdf8;text-align:center}
+.mode-indicator{text-align:center;font-size:.75rem;color:#64748b}
+.format-box{background:#0f172a;border:1px solid #334155;border-radius:4px;padding:8px;font-family:monospace;font-size:.7rem;word-break:break-all;color:#94a3b8;max-height:60px;overflow-y:auto;margin-top:4px}
+select{background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:4px;padding:4px 8px;font-size:.8rem}
+.valid-ok{background:#064e3b;color:#6ee7b7;padding:8px 12px;border-radius:6px;font-size:.82rem;line-height:1.5}
+.valid-err{background:#7f1d1d;color:#fca5a5;padding:8px 12px;border-radius:6px;font-size:.82rem;line-height:1.5}
+.valid-err ul{margin:6px 0 0 16px;font-size:.78rem}
+.cell.edit-mode{background:#1a1a2e;cursor:crosshair}
+.cell.edit-mode:hover{background:#2a2a4e}
+.cell.edit-placed{color:#fbbf24;font-weight:700}
+.import-area{margin-top:8px}
+.import-area textarea{width:100%;background:#0f172a;color:#e2e8f0;border:1px solid #475569;border-radius:4px;padding:8px;font-family:monospace;font-size:.78rem;resize:vertical;min-height:50px}
+.import-area .controls{margin-top:6px}
+</style>
+</head>
+<body>
+
+<h1>Sudaku</h1>
+<p class="subtitle">High-performance Sudoku library — DLX + Bitmask solver, 13 logic techniques, zero dependencies</p>
+
+<div class="app">
+  <!-- Left: Board + Controls -->
+  <div class="board-area">
+    <div class="board" id="board"></div>
+    <div class="mode-indicator">Mode: <strong id="modeLabel">Place</strong> (press P for pencil)</div>
+    <div class="numpad" id="numpad"></div>
+    <div class="controls">
+      <button class="btn" onclick="doUndo()">Undo</button>
+      <button class="btn" onclick="doRedo()">Redo</button>
+      <button class="btn" onclick="doErase()">Erase</button>
+      <button class="btn" onclick="toggleMode()" id="pencilBtn">Pencil</button>
+      <button class="btn primary" onclick="showHint()">Hint</button>
+      <button class="btn" onclick="checkErrors()">Check</button>
+    </div>
+    <div class="controls">
+      <button class="btn primary" onclick="newGame()">New Game</button>
+      <select id="diffSelect">
+        <option value="">Any Difficulty</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+        <option value="expert">Expert</option>
+        <option value="evil">Evil</option>
+      </select>
+      <button class="btn" onclick="solveIt()">Auto Solve</button>
+      <button class="btn" onclick="saveGame()">Save</button>
+      <button class="btn" onclick="loadSavedGame()">Load</button>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="importPuzzle()">Import</button>
+      <button class="btn" onclick="enterEditMode()" id="editBtn">Edit / Create</button>
+      <button class="btn" onclick="validateCurrent()">Validate</button>
+      <button class="btn" onclick="clearBoard()">Clear</button>
+    </div>
+    <div id="editBanner" style="display:none;text-align:center;background:#422006;color:#fbbf24;padding:6px 12px;border-radius:6px;font-size:.8rem;margin-top:4px">
+      EDIT MODE — Place digits to create a puzzle, then click <strong>Done Editing</strong>
+    </div>
+    <div class="timer" id="timer">00:00</div>
+  </div>
+
+  <!-- Right: Panels -->
+  <div class="panels">
+    <!-- Puzzle Info -->
+    <div class="panel" id="infoPanel">
+      <h3><span>&#128202;</span> Puzzle Info</h3>
+      <dl class="info-grid" id="infoGrid"></dl>
+      <div class="bar"><div class="bar-fill" id="progressBar" style="width:0"></div></div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="panel" id="analysisPanel">
+      <h3><span>&#128300;</span> Analysis</h3>
+      <div id="analysisContent"></div>
+    </div>
+
+    <!-- Validation -->
+    <div class="panel" id="validatePanel" style="display:none">
+      <h3><span>&#9989;</span> Validation</h3>
+      <div id="validateContent"></div>
+    </div>
+
+    <!-- Hint -->
+    <div class="panel" id="hintPanel" style="display:none">
+      <h3><span>&#128161;</span> Hint</h3>
+      <div id="hintContent"></div>
+    </div>
+
+    <!-- Logic Steps -->
+    <div class="panel">
+      <h3><span>&#129520;</span> Logic Solve Steps</h3>
+      <div class="controls" style="margin-bottom:8px">
+        <button class="btn" onclick="showLogicSteps()">Run Logic Solver</button>
+      </div>
+      <div class="steps-list" id="stepsContent"></div>
+    </div>
+
+    <!-- Serialization -->
+    <div class="panel">
+      <h3><span>&#128190;</span> Serialization</h3>
+      <div class="controls" style="margin-bottom:8px">
+        <button class="btn" onclick="showFormat('sdk')">SDK</button>
+        <button class="btn" onclick="showFormat('oneline')">One-Line</button>
+        <button class="btn" onclick="showFormat('opensudoku')">OpenSudoku</button>
+        <button class="btn" onclick="showFormat('pretty')">Pretty</button>
+      </div>
+      <div class="format-box" id="formatBox">Click a format above</div>
+    </div>
+
+    <!-- Benchmark -->
+    <div class="panel">
+      <h3><span>&#9889;</span> Benchmark</h3>
+      <div class="controls">
+        <button class="btn primary" onclick="runBenchmark()">Run Benchmark</button>
+      </div>
+      <div class="log" id="benchLog"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ---- Build inline from source (bundled for demo) ----
+// We import from the compiled dist/
+import { Sudaku, SudokuGame, prettyPrint, prettyOneLine, toSDK, fromSDK, toOpenSudoku, analyze, rate } from './sudaku.js';
+
+const sdk = new Sudaku();
+let game = null;
+let selected = -1;
+let pencilMode = false;
+let editMode = false;
+let editCells = new Uint8Array(81);
+let timerInterval = null;
+let currentPuzzle = '';
+let currentSolution = '';
+
+// Expose to global for onclick handlers
+window.newGame = newGame;
+window.doUndo = doUndo;
+window.doRedo = doRedo;
+window.doErase = doErase;
+window.toggleMode = toggleMode;
+window.showHint = showHint;
+window.checkErrors = checkErrors;
+window.solveIt = solveIt;
+window.showLogicSteps = showLogicSteps;
+window.showFormat = showFormat;
+window.runBenchmark = runBenchmark;
+window.saveGame = saveGame;
+window.importPuzzle = importPuzzle;
+window.enterEditMode = enterEditMode;
+window.validateCurrent = validateCurrent;
+window.clearBoard = clearBoard;
+window.doneEditing = doneEditing;
+window.cancelEdit = cancelEdit;
+window.loadSavedGame = loadSavedGame;
+
+// ---- Init ----
+buildBoard();
+buildNumpad();
+newGame();
+
+document.addEventListener('keydown', (e) => {
+  if (e.key >= '1' && e.key <= '9') placeDigit(Number(e.key));
+  else if (e.key === 'Backspace' || e.key === 'Delete') doErase();
+  else if (e.key === 'p' || e.key === 'P') toggleMode();
+  else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doUndo(); }
+  else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doRedo(); }
+  else if (e.key === 'ArrowUp' && selected >= 9) { selected -= 9; editMode ? renderEditMode() : render(); }
+  else if (e.key === 'ArrowDown' && selected < 72) { selected += 9; editMode ? renderEditMode() : render(); }
+  else if (e.key === 'ArrowLeft' && selected > 0) { selected--; editMode ? renderEditMode() : render(); }
+  else if (e.key === 'ArrowRight' && selected < 80) { selected++; editMode ? renderEditMode() : render(); }
+  else if (e.key === 'Escape' && editMode) { cancelEdit(); }
+});
+
+// ---- Board UI ----
+function buildBoard() {
+  const board = document.getElementById('board');
+  for (let i = 0; i < 81; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.idx = i;
+    cell.addEventListener('click', () => { selected = i; editMode ? renderEditMode() : render(); });
+    board.appendChild(cell);
+  }
+}
+
+function buildNumpad() {
+  const pad = document.getElementById('numpad');
+  for (let d = 1; d <= 9; d++) {
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = d;
+    btn.addEventListener('click', () => placeDigit(d));
+    pad.appendChild(btn);
+  }
+}
+
+function render() {
+  if (!game) return;
+  const state = game.getState();
+  const cells = document.querySelectorAll('.cell');
+  const errors = game.getErrors();
+  const conflicts = game.getConflicts();
+  const errorSet = new Set(errors);
+  const conflictSet = new Set(conflicts);
+
+  const selectedRow = selected >= 0 ? (selected / 9 | 0) : -1;
+  const selectedCol = selected >= 0 ? selected % 9 : -1;
+  const selectedBox = selected >= 0 ? ((selectedRow / 3 | 0) * 3 + (selectedCol / 3 | 0)) : -1;
+  const selectedVal = selected >= 0 ? state.cells[selected] : 0;
+
+  cells.forEach((cell, i) => {
+    const r = i / 9 | 0, c = i % 9, b = (r / 3 | 0) * 3 + (c / 3 | 0);
+    const val = state.cells[i];
+    const isGiven = game.isGiven(i);
+
+    cell.className = 'cell';
+    if (isGiven) cell.classList.add('given');
+    else if (val !== 0) cell.classList.add('user');
+    if (i === selected) cell.classList.add('selected');
+    else if (selected >= 0 && (r === selectedRow || c === selectedCol || b === selectedBox)) cell.classList.add('peer');
+    if (selectedVal > 0 && val === selectedVal && i !== selected) cell.classList.add('highlight');
+    if (errorSet.has(i)) cell.classList.add('error');
+    if (conflictSet.has(i)) cell.classList.add('conflict');
+
+    if (val !== 0) {
+      cell.textContent = val;
+    } else {
+      const marks = state.pencilMarks[i];
+      if (marks.length > 0) {
+        cell.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'pencil';
+        for (let d = 1; d <= 9; d++) {
+          const s = document.createElement('span');
+          s.textContent = marks.includes(d) ? d : '';
+          grid.appendChild(s);
+        }
+        cell.appendChild(grid);
+      } else {
+        cell.textContent = '';
+      }
+    }
+  });
+
+  // Progress
+  const pct = (game.getProgress() * 100).toFixed(0);
+  document.getElementById('progressBar').style.width = pct + '%';
+
+  // Check completion
+  if (state.completed) {
+    clearInterval(timerInterval);
+    document.getElementById('timer').textContent += ' — Solved!';
+  }
+}
+
+// ---- Actions ----
+function placeDigit(d) {
+  if (editMode) {
+    if (selected < 0) return;
+    editCells[selected] = editCells[selected] === d ? 0 : d; // toggle
+    renderEditMode();
+    return;
+  }
+  if (!game || selected < 0) return;
+  if (pencilMode) game.togglePencilMark(selected, d);
+  else game.place(selected, d);
+  render();
+  updateInfo();
+}
+
+function doUndo() { game?.undo(); render(); updateInfo(); }
+function doRedo() { game?.redo(); render(); updateInfo(); }
+function doErase() {
+  if (editMode && selected >= 0) { editCells[selected] = 0; renderEditMode(); return; }
+  if (game && selected >= 0) { game.erase(selected); render(); updateInfo(); }
+}
+
+function toggleMode() {
+  pencilMode = !pencilMode;
+  document.getElementById('modeLabel').textContent = pencilMode ? 'Pencil' : 'Place';
+  document.getElementById('pencilBtn').classList.toggle('active', pencilMode);
+}
+
+function checkErrors() {
+  if (!game) return;
+  const errors = game.getErrors();
+  const conflicts = game.getConflicts();
+  render(); // re-render highlights errors/conflicts
+  const el = document.getElementById('hintPanel');
+  el.style.display = 'block';
+  document.getElementById('hintContent').innerHTML = errors.length === 0 && conflicts.length === 0
+    ? '<div class="hint-box">No errors found!</div>'
+    : `<div class="hint-box">${errors.length} wrong cell(s), ${conflicts.length} conflict(s)</div>`;
+}
+
+function solveIt() {
+  if (!currentPuzzle) return;
+  const result = sdk.solve(currentPuzzle);
+  if (result.solved) {
+    for (let i = 0; i < 81; i++) {
+      if (currentPuzzle[i] === '0') game.place(i, Number(result.solution[i]));
+    }
+    render();
+    updateInfo();
+  }
+}
+
+// ---- Hint ----
+function showHint() {
+  if (!game) return;
+  const state = game.getState();
+  let currentStr = '';
+  for (let i = 0; i < 81; i++) currentStr += state.cells[i];
+
+  const ph = sdk.progressiveHint(currentStr);
+  const el = document.getElementById('hintPanel');
+  el.style.display = 'block';
+
+  if (!ph.found) {
+    document.getElementById('hintContent').innerHTML = '<div class="hint-box">No hint available — puzzle may need guessing</div>';
+    return;
+  }
+
+  document.getElementById('hintContent').innerHTML = `
+    <div class="hint-box">
+      <div class="hint-level">Level 1 — Nudge</div>
+      ${ph.level1}
+    </div>
+    <div class="hint-box" style="margin-top:6px">
+      <div class="hint-level">Level 2 — Area</div>
+      ${ph.level2}
+    </div>
+    <div class="hint-box" style="margin-top:6px">
+      <div class="hint-level">Level 3 — Full</div>
+      <strong>[${ph.level3.technique}]</strong> ${ph.level3.explanation}
+    </div>
+  `;
+
+  // Highlight hint cells
+  if (ph.level3.primaryCells) {
+    const cells = document.querySelectorAll('.cell');
+    for (const c of ph.level3.primaryCells) {
+      cells[c.cell]?.classList.add('highlight');
+    }
+  }
+}
+
+// ---- Logic Steps ----
+function showLogicSteps() {
+  const result = sdk.solveLogic(currentPuzzle);
+  const el = document.getElementById('stepsContent');
+
+  if (result.steps.length === 0) {
+    el.innerHTML = '<span style="color:#94a3b8">No logic steps found</span>';
+    return;
+  }
+
+  const techCounts = {};
+  for (const s of result.steps) techCounts[s.technique] = (techCounts[s.technique] || 0) + 1;
+
+  let html = `<div style="margin-bottom:8px;color:#64748b">${result.solved ? 'Solved' : 'Incomplete'} in ${result.totalSteps} steps</div>`;
+  html += '<div style="margin-bottom:8px" class="technique-list">';
+  for (const [name, count] of Object.entries(techCounts)) {
+    html += `<span class="technique-tag">${name}: ${count}x</span>`;
+  }
+  html += '</div>';
+
+  for (let i = 0; i < Math.min(result.steps.length, 100); i++) {
+    const s = result.steps[i];
+    html += `<div class="step"><span class="step-num">${i + 1}.</span><span class="step-tech">[${s.technique}]</span><span class="step-desc">${s.explanation}</span></div>`;
+  }
+  if (result.steps.length > 100) html += `<div style="color:#64748b">...and ${result.steps.length - 100} more</div>`;
+  el.innerHTML = html;
+}
+
+// ---- Serialization ----
+function showFormat(fmt) {
+  const el = document.getElementById('formatBox');
+  switch (fmt) {
+    case 'sdk': el.textContent = toSDK(currentPuzzle); break;
+    case 'oneline': el.textContent = prettyOneLine(currentPuzzle); break;
+    case 'opensudoku': el.textContent = toOpenSudoku(currentPuzzle); break;
+    case 'pretty': el.textContent = prettyPrint(currentPuzzle); break;
+  }
+}
+
+// ---- Benchmark ----
+function runBenchmark() {
+  const log = document.getElementById('benchLog');
+  log.textContent = 'Running...\n';
+
+  requestAnimationFrame(() => {
+    const hard = '800000000003600000070090200050007000000045700000100030001000068008500010090000400';
+
+    let t0 = performance.now();
+    const N = 500;
+    for (let i = 0; i < N; i++) sdk.solve(hard);
+    let ms = performance.now() - t0;
+    log.textContent += `Solve:    ${N}x hard -> ${ms.toFixed(0)}ms (${(ms/N).toFixed(3)}ms/puzzle)\n`;
+
+    t0 = performance.now();
+    const G = 10;
+    for (let i = 0; i < G; i++) sdk.generate({ seed: i });
+    ms = performance.now() - t0;
+    log.textContent += `Generate: ${G}x -> ${ms.toFixed(0)}ms (${(ms/G).toFixed(0)}ms/puzzle)\n`;
+
+    t0 = performance.now();
+    const H = 500;
+    for (let i = 0; i < H; i++) sdk.hint(currentPuzzle);
+    ms = performance.now() - t0;
+    log.textContent += `Hint:     ${H}x -> ${ms.toFixed(0)}ms (${(ms/H).toFixed(3)}ms/hint)\n`;
+
+    t0 = performance.now();
+    sdk.analyze(currentPuzzle);
+    ms = performance.now() - t0;
+    log.textContent += `Analyze:  1x -> ${ms.toFixed(2)}ms\n`;
+
+    t0 = performance.now();
+    const B = 5;
+    sdk.generateBatch(B);
+    ms = performance.now() - t0;
+    log.textContent += `Batch:    ${B}x generate -> ${ms.toFixed(0)}ms\n`;
+
+    log.textContent += '\nDone!';
+  });
+}
+
+// ---- Save/Load ----
+function saveGame() {
+  if (!game) return;
+  const json = sdk.saveGame(game.getState());
+  localStorage.setItem('sudaku_save', json);
+  alert('Game saved!');
+}
+
+function loadSavedGame() {
+  const json = localStorage.getItem('sudaku_save');
+  if (!json) { alert('No saved game found'); return; }
+  game = sdk.loadGame(json);
+  currentPuzzle = game.getState().puzzle;
+  currentSolution = game.getState().solution;
+  selected = -1;
+  render();
+  updateInfo();
+  startTimer();
+}
+
+// ---- Import Puzzle ----
+function importPuzzle() {
+  const panel = document.getElementById('validatePanel');
+  panel.style.display = 'block';
+  document.getElementById('validateContent').innerHTML = `
+    <div class="import-area">
+      <div style="color:#94a3b8;font-size:.78rem;margin-bottom:4px">Paste a puzzle (81 digits, '0' or '.' for empty):</div>
+      <textarea id="importInput" placeholder="530070000600195000098000060800060003400803001700020006060000280000419005000080079"></textarea>
+      <div class="controls">
+        <button class="btn primary" onclick="doImport()">Load Puzzle</button>
+        <button class="btn" onclick="doImportAndValidate()">Validate Only</button>
+      </div>
+      <div id="importResult"></div>
+    </div>
+  `;
+}
+window.doImport = doImport;
+window.doImportAndValidate = doImportAndValidate;
+
+function doImport() {
+  const raw = document.getElementById('importInput').value.trim();
+  const puzzle = fromSDK(raw);
+  if (puzzle.length !== 81) {
+    document.getElementById('importResult').innerHTML = '<div class="valid-err" style="margin-top:8px">Invalid input: need 81 cells</div>';
+    return;
+  }
+  const v = sdk.validate(puzzle);
+  if (!v.solvable) {
+    document.getElementById('importResult').innerHTML = `<div class="valid-err" style="margin-top:8px">Puzzle is not solvable</div>`;
+    return;
+  }
+  // Load it as a new game
+  exitEditMode();
+  currentPuzzle = puzzle;
+  const result = sdk.solve(puzzle);
+  currentSolution = result.solution || '';
+  game = sdk.createGame(currentPuzzle);
+  selected = -1;
+  render();
+  updateInfo();
+  updateAnalysis();
+  startTimer();
+  document.getElementById('validatePanel').style.display = 'none';
+}
+
+function doImportAndValidate() {
+  const raw = document.getElementById('importInput').value.trim();
+  const puzzle = fromSDK(raw);
+  if (puzzle.length !== 81) {
+    document.getElementById('importResult').innerHTML = '<div class="valid-err" style="margin-top:8px">Invalid input: need 81 cells</div>';
+    return;
+  }
+  showValidation(puzzle, document.getElementById('importResult'));
+}
+
+// ---- Validate Current ----
+function validateCurrent() {
+  let puzzleStr = currentPuzzle;
+  if (editMode) {
+    puzzleStr = '';
+    for (let i = 0; i < 81; i++) puzzleStr += editCells[i];
+  } else if (game) {
+    const state = game.getState();
+    puzzleStr = '';
+    for (let i = 0; i < 81; i++) puzzleStr += state.cells[i];
+  }
+  const panel = document.getElementById('validatePanel');
+  panel.style.display = 'block';
+  showValidation(puzzleStr, document.getElementById('validateContent'));
+}
+
+function showValidation(puzzle, container) {
+  const v = sdk.validate(puzzle);
+  const clues = puzzle.split('').filter(c => c !== '0').length;
+
+  if (v.valid) {
+    const d = sdk.difficulty(puzzle);
+    const r = rate(puzzle);
+    const a = analyze(puzzle);
+    container.innerHTML = `
+      <div class="valid-ok">
+        <strong>Valid puzzle!</strong><br>
+        Solvable: Yes | Unique: ${v.unique ? 'Yes' : 'No'} | Clues: ${clues}<br>
+        Difficulty: <span class="tag ${d.label.toLowerCase()}">${d.label}</span> (score ${d.score}/100)<br>
+        Rating: ${r.rating} — ${r.benchmark}<br>
+        Symmetry: ${a.symmetry} | Logic solvable: ${d.solvableByLogic ? 'Yes' : 'No'}<br>
+        Techniques: ${d.techniquesUsed.join(', ') || 'None needed'}
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="valid-err">
+        <strong>Invalid puzzle</strong> (${clues} clues)<br>
+        Solvable: ${v.solvable ? 'Yes' : 'No'} | Unique: ${v.unique ? 'Yes' : 'No'}
+        <ul>${v.errors.map(e => `<li>${e.message}</li>`).join('')}</ul>
+      </div>
+    `;
+  }
+}
+
+// ---- Edit / Create Mode ----
+function enterEditMode() {
+  if (editMode) {
+    doneEditing();
+    return;
+  }
+  editMode = true;
+  editCells = new Uint8Array(81);
+  game = null;
+  selected = -1;
+  clearInterval(timerInterval);
+  document.getElementById('timer').textContent = 'EDIT';
+  document.getElementById('editBanner').style.display = 'block';
+  document.getElementById('editBtn').textContent = 'Done Editing';
+  document.getElementById('editBtn').classList.add('active');
+  renderEditMode();
+}
+
+function renderEditMode() {
+  const cells = document.querySelectorAll('.cell');
+  const selectedRow = selected >= 0 ? (selected / 9 | 0) : -1;
+  const selectedCol = selected >= 0 ? selected % 9 : -1;
+  const selectedBox = selected >= 0 ? ((selectedRow / 3 | 0) * 3 + (selectedCol / 3 | 0)) : -1;
+
+  cells.forEach((cell, i) => {
+    const r = i / 9 | 0, c = i % 9, b = (r / 3 | 0) * 3 + (c / 3 | 0);
+    cell.className = 'cell edit-mode';
+    if (i === selected) cell.classList.add('selected');
+    else if (selected >= 0 && (r === selectedRow || c === selectedCol || b === selectedBox)) cell.classList.add('peer');
+    if (editCells[i] !== 0) cell.classList.add('edit-placed');
+    cell.textContent = editCells[i] !== 0 ? editCells[i] : '';
+  });
+}
+
+function doneEditing() {
+  let puzzle = '';
+  for (let i = 0; i < 81; i++) puzzle += editCells[i];
+
+  const clues = puzzle.split('').filter(c => c !== '0').length;
+  if (clues < 1) {
+    alert('Board is empty. Place some digits first.');
+    return;
+  }
+
+  // Validate
+  const v = sdk.validate(puzzle);
+  if (!v.solvable) {
+    const panel = document.getElementById('validatePanel');
+    panel.style.display = 'block';
+    showValidation(puzzle, document.getElementById('validateContent'));
+    return;
+  }
+
+  // Load as game
+  exitEditMode();
+  currentPuzzle = puzzle;
+  const result = sdk.solve(puzzle);
+  currentSolution = result.solution || '';
+  game = sdk.createGame(currentPuzzle);
+  selected = -1;
+  render();
+  updateInfo();
+  updateAnalysis();
+  startTimer();
+}
+
+function cancelEdit() {
+  exitEditMode();
+  if (currentPuzzle) {
+    game = sdk.createGame(currentPuzzle);
+    render();
+  }
+}
+
+function exitEditMode() {
+  editMode = false;
+  document.getElementById('editBanner').style.display = 'none';
+  document.getElementById('editBtn').textContent = 'Edit / Create';
+  document.getElementById('editBtn').classList.remove('active');
+}
+
+// ---- Clear Board ----
+function clearBoard() {
+  if (editMode) {
+    editCells = new Uint8Array(81);
+    renderEditMode();
+  } else {
+    if (!confirm('Reset the board to original puzzle?')) return;
+    if (currentPuzzle) {
+      game = sdk.createGame(currentPuzzle);
+      selected = -1;
+      render();
+      updateInfo();
+    }
+  }
+}
+
+// ---- New Game ----
+function newGame() {
+  exitEditMode();
+  const diff = document.getElementById('diffSelect').value;
+  const opts = { symmetric: true };
+  if (diff) opts.difficulty = diff;
+
+  const gen = sdk.generate(opts);
+  currentPuzzle = gen.puzzle;
+  currentSolution = gen.solution;
+  game = sdk.createGame(currentPuzzle);
+  selected = -1;
+  pencilMode = false;
+  document.getElementById('modeLabel').textContent = 'Place';
+  document.getElementById('pencilBtn').classList.remove('active');
+  document.getElementById('hintPanel').style.display = 'none';
+  document.getElementById('stepsContent').innerHTML = '';
+  document.getElementById('formatBox').textContent = 'Click a format above';
+
+  render();
+  updateInfo();
+  updateAnalysis();
+  startTimer();
+}
+
+// ---- Info Panel ----
+function updateInfo() {
+  if (!game) return;
+  const state = game.getState();
+  const d = sdk.difficulty(currentPuzzle);
+  const r = sdk.rate(currentPuzzle);
+  const clues = currentPuzzle.split('').filter(c => c !== '0').length;
+  const filled = state.cells.filter(c => c !== 0).length;
+
+  const el = document.getElementById('infoGrid');
+  el.innerHTML = `
+    <dt>Difficulty</dt><dd><span class="tag ${d.label.toLowerCase()}">${d.label}</span> ${d.score}/100</dd>
+    <dt>Rating</dt><dd>${r.rating}</dd>
+    <dt>Clues</dt><dd>${clues}</dd>
+    <dt>Filled</dt><dd>${filled}/81</dd>
+    <dt>Logic solvable</dt><dd>${d.solvableByLogic ? 'Yes' : 'No'}</dd>
+    <dt>Hardest tech</dt><dd>${d.hardestTechnique}</dd>
+    <dt>Logic steps</dt><dd>${d.totalSteps}</dd>
+    <dt>Techniques</dt><dd>${d.techniquesUsed.length}</dd>
+  `;
+}
+
+function updateAnalysis() {
+  const a = analyze(currentPuzzle);
+  const el = document.getElementById('analysisContent');
+  el.innerHTML = `
+    <dl class="info-grid">
+      <dt>Symmetry</dt><dd>${a.symmetry}</dd>
+      <dt>Solutions</dt><dd>${a.solutionCount}</dd>
+      <dt>Solve time</dt><dd>${a.solveTimeMs}ms</dd>
+      <dt>Empty cells</dt><dd>${a.emptyCells}</dd>
+    </dl>
+    <div style="margin-top:8px">
+      <div style="color:#94a3b8;font-size:.75rem;margin-bottom:4px">Techniques needed:</div>
+      <div class="technique-list">
+        ${a.techniques.map(t => `<span class="technique-tag">${t.name}: ${t.count}x</span>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <div style="color:#94a3b8;font-size:.75rem;margin-bottom:4px">Clues per row:</div>
+      <div style="display:flex;gap:3px">${a.clueDistribution.rows.map(n => `<span style="background:#334155;padding:2px 6px;border-radius:3px;font-size:.7rem">${n}</span>`).join('')}</div>
+    </div>
+  `;
+}
+
+// ---- Timer ----
+function startTimer() {
+  clearInterval(timerInterval);
+  const start = Date.now();
+  const el = document.getElementById('timer');
+  timerInterval = setInterval(() => {
+    const s = ((Date.now() - start) / 1000) | 0;
+    const mm = String(s / 60 | 0).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    el.textContent = `${mm}:${ss}`;
+  }, 1000);
+  el.textContent = '00:00';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{
+  "name": "sudaku",
+  "version": "0.1.0",
+  "description": "High-performance Sudoku library — solver (DLX + bitmask), generator, hints, difficulty grading. Pure TypeScript, zero dependencies.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:docs": "esbuild src/index.ts --bundle --format=esm --outfile=docs/sudaku.js --minify && sed \"s|from './dist/index.js'|from './sudaku.js'|\" demo.html > docs/index.html",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run lint && npm run test && npm run clean && npm run build"
+  },
+  "keywords": [
+    "sudoku",
+    "solver",
+    "generator",
+    "dlx",
+    "dancing-links",
+    "puzzle",
+    "hint",
+    "difficulty"
+  ],
+  "license": "MIT",
+  "author": "Hong4rc <hong4rc@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hong4rc/sudaku.git"
+  },
+  "homepage": "https://github.com/hong4rc/sudaku#readme",
+  "bugs": {
+    "url": "https://github.com/hong4rc/sudaku/issues"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "esbuild": "^0.27.4",
+    "eslint": "^10.1.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.32.0",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.57.2",
+    "vitest": "^4.1.2"
+  }
+}
