@@ -223,14 +223,7 @@ export function popcount(v: number): number {
 
 export function ctz(v: number): number {
   if (v === 0) return 32;
-  let c = 0;
-  let n = v;
-  if ((n & 0x0000ffff) === 0) { c += 16; n >>= 16; }
-  if ((n & 0x000000ff) === 0) { c += 8; n >>= 8; }
-  if ((n & 0x0000000f) === 0) { c += 4; n >>= 4; }
-  if ((n & 0x00000003) === 0) { c += 2; n >>= 2; }
-  if ((n & 0x00000001) === 0) { c += 1; }
-  return c;
+  return 31 - Math.clz32(v & -v);
 }
 
 export function maskDigits(mask: number): number[] {

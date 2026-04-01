@@ -21,21 +21,27 @@ export interface TechniqueResult {
 
 function cellRef(i: number): CellRef { return { cell: i, row: ROW[i], col: COL[i] }; }
 
-// ---- House helpers ----
+// ---- Pre-computed house cell arrays (computed once at module load) ----
 
-function rowCells(r: number): number[] { const a = []; for (let c = 0; c < 9; c++) a.push(r * 9 + c); return a; }
-function colCells(c: number): number[] { const a = []; for (let r = 0; r < 9; r++) a.push(r * 9 + c); return a; }
-function boxCells(b: number): number[] {
-  const a = [], sr = ((b / 3) | 0) * 3, sc = (b % 3) * 3;
-  for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) a.push((sr + dr) * 9 + sc + dc);
-  return a;
+const ROW_CELLS: number[][] = [];
+const COL_CELLS: number[][] = [];
+const BOX_CELLS: number[][] = [];
+
+for (let i = 0; i < 9; i++) {
+  const row: number[] = [], col: number[] = [];
+  for (let j = 0; j < 9; j++) { row.push(i * 9 + j); col.push(j * 9 + i); }
+  ROW_CELLS.push(row);
+  COL_CELLS.push(col);
+  const bx: number[] = [], sr = ((i / 3) | 0) * 3, sc = (i % 3) * 3;
+  for (let dr = 0; dr < 3; dr++) for (let dc = 0; dc < 3; dc++) bx.push((sr + dr) * 9 + sc + dc);
+  BOX_CELLS.push(bx);
 }
 
 const HOUSES: { type: string; index: number; cells: number[] }[] = [];
 for (let i = 0; i < 9; i++) {
-  HOUSES.push({ type: 'Row', index: i, cells: rowCells(i) });
-  HOUSES.push({ type: 'Column', index: i, cells: colCells(i) });
-  HOUSES.push({ type: 'Box', index: i, cells: boxCells(i) });
+  HOUSES.push({ type: 'Row', index: i, cells: ROW_CELLS[i] });
+  HOUSES.push({ type: 'Column', index: i, cells: COL_CELLS[i] });
+  HOUSES.push({ type: 'Box', index: i, cells: BOX_CELLS[i] });
 }
 
 // ---- 1. Naked Single ----
@@ -128,7 +134,7 @@ export function hiddenPair(b: LogicBoard): TechniqueResult | null {
 // ---- 5. Pointing Pair ----
 export function pointingPair(b: LogicBoard): TechniqueResult | null {
   for (let bx = 0; bx < 9; bx++) {
-    const cells = boxCells(bx);
+    const cells = BOX_CELLS[bx];
     for (let d = 1; d <= 9; d++) {
       const bit = 1 << d;
       const pos: number[] = [];
@@ -170,8 +176,8 @@ export function pointingPair(b: LogicBoard): TechniqueResult | null {
 // ---- 6. Box/Line Reduction ----
 export function boxLineReduction(b: LogicBoard): TechniqueResult | null {
   const lines = [...Array(9).keys()].flatMap(i => [
-    { type: 'Row' as const, index: i, cells: rowCells(i) },
-    { type: 'Column' as const, index: i, cells: colCells(i) },
+    { type: 'Row' as const, index: i, cells: ROW_CELLS[i] },
+    { type: 'Column' as const, index: i, cells: COL_CELLS[i] },
   ]);
   for (const line of lines) {
     for (let d = 1; d <= 9; d++) {
@@ -184,7 +190,7 @@ export function boxLineReduction(b: LogicBoard): TechniqueResult | null {
       const bx = BOX[pos[0]];
       if (!pos.every(i => BOX[i] === bx)) continue;
 
-      const bc = boxCells(bx);
+      const bc = BOX_CELLS[bx];
       const elims: Elimination[] = [];
       for (const idx of bc) {
         if (pos.includes(idx) || b.cells[idx] !== 0) continue;
@@ -525,9 +531,9 @@ function arePeers(a: number, b: number): boolean {
 
 // ---- Technique Chain ----
 
-type TechniqueFn = (b: LogicBoard) => TechniqueResult | null;
+export type TechniqueFn = (b: LogicBoard) => TechniqueResult | null;
 
-const CHAIN: TechniqueFn[] = [
+export const CHAIN: TechniqueFn[] = [
   nakedSingle, hiddenSingle,                   // Easy
   nakedPair, hiddenPair, nakedTriple,           // Medium
   hiddenTriple, pointingPair, boxLineReduction, // Hard

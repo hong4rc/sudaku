@@ -1,7 +1,7 @@
 import { Board, maskDigits } from './board.js';
 import * as hybrid from './solver/hybrid.js';
 import { LogicBoard } from './logic/logic-board.js';
-import { findNext, solveLogic, nakedSingle, hiddenSingle, nakedPair, hiddenPair, nakedTriple, hiddenTriple, pointingPair, boxLineReduction, xWing, yWing, uniqueRectangle, swordfish, simpleColoring, type TechniqueResult, DifficultyLevel } from './logic/techniques.js';
+import { findNext, solveLogic, solveLogicIterator, CHAIN, type TechniqueResult, DifficultyLevel } from './logic/techniques.js';
 import { generate, generateBatch, type GenerateOptions, type GenerateResult } from './generator.js';
 import { validate, type ValidationResult } from './validator.js';
 import { SudokuGame, type GameState } from './game.js';
@@ -48,6 +48,11 @@ export class Sudaku {
     return { solved, totalSteps: steps.length, steps };
   }
 
+  /** Iterator Pattern — lazy step-by-step solve for streaming/animation. */
+  *solveLogicSteps(puzzle: string): Generator<TechniqueResult> {
+    yield* solveLogicIterator(LogicBoard.fromPuzzle(puzzle));
+  }
+
   // ---- Hints ----
 
   hint(puzzle: string): HintResult {
@@ -57,9 +62,8 @@ export class Sudaku {
 
   allHints(puzzle: string): TechniqueResult[] {
     const b = LogicBoard.fromPuzzle(puzzle);
-    const fns = [nakedSingle, hiddenSingle, nakedPair, hiddenPair, nakedTriple, hiddenTriple, pointingPair, boxLineReduction, xWing, yWing, uniqueRectangle, swordfish, simpleColoring];
     const results: TechniqueResult[] = [];
-    for (const fn of fns) { const r = fn(b); if (r) results.push(r); }
+    for (const fn of CHAIN) { const r = fn(b); if (r) results.push(r); }
     return results;
   }
 

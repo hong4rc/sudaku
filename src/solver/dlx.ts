@@ -83,7 +83,7 @@ class DLXMatrix {
       this.right[ni] = i === len - 1 ? first : ni + 1;
       this.up[ni] = prevUp; this.down[ni] = c; this.col[ni] = c; this.rowId[ni] = rowId;
       this.down[prevUp] = ni; this.up[c] = ni; this.size[c]++;
-      this.nodeCount++;
+      if (++this.nodeCount >= MAX_NODES) throw new Error('DLX matrix overflow');
     }
   }
 

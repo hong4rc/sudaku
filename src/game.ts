@@ -70,9 +70,11 @@ export class SudokuGame {
     if (idx !== -1) list.splice(idx, 1);
   }
 
+  private static readonly EMPTY: GameListener[] = [];
+
   private emit(event: GameEvent): void {
-    for (const listener of this.listeners.get(event.type) ?? []) listener(event);
-    for (const listener of this.listeners.get('*') ?? []) listener(event);
+    for (const listener of this.listeners.get(event.type) ?? SudokuGame.EMPTY) listener(event);
+    for (const listener of this.listeners.get('*') ?? SudokuGame.EMPTY) listener(event);
   }
 
   constructor(puzzle: string) {
@@ -256,8 +258,8 @@ export class SudokuGame {
       ...state,
       cells: [...state.cells],
       pencilMarks: state.pencilMarks.map(m => [...m]),
-      undoStack: [...state.undoStack],
-      redoStack: [...state.redoStack],
+      undoStack: state.undoStack.map(m => ({ ...m, prevPencilMarks: [...m.prevPencilMarks] })),
+      redoStack: state.redoStack.map(m => ({ ...m, prevPencilMarks: [...m.prevPencilMarks] })),
     };
     return game;
   }
