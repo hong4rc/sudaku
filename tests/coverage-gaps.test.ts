@@ -340,6 +340,22 @@ describe('Unique Rectangle Type 1', () => {
 });
 
 // ---- game.ts: isGiven, getElapsedTime, fromState ----
+describe('Game fromState with redo stack', () => {
+  it('deep copies redo stack on restore', () => {
+    const game = sdk.createGame(EASY);
+    const empty = EASY.indexOf('0');
+    game.place(empty, 1);
+    game.undo(); // move goes to redo stack
+    expect(game.getState().redoStack.length).toBe(1);
+
+    const json = sdk.saveGame(game.getState());
+    const loaded = sdk.loadGame(json);
+    expect(loaded.getState().redoStack.length).toBe(1);
+    loaded.redo();
+    expect(loaded.getState().cells[empty]).toBe(1);
+  });
+});
+
 describe('Game extra methods', () => {
   it('isGiven returns correct values', () => {
     const game = sdk.createGame(EASY);

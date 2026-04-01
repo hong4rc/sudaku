@@ -70,6 +70,13 @@ describe('generateWithDifficulty fallback', () => {
     expect(g.puzzle).toHaveLength(81);
     spy.mockRestore();
   });
+
+  it('hits fallback with impossible difficulty target', () => {
+    // maxRetries=0 skips the loop entirely → straight to fallback line 157
+    const g = sdk.generate({ difficulty: 'evil', seed: 77, maxRetries: 0 });
+    expect(g.puzzle).toHaveLength(81);
+    expect(g.solution).toHaveLength(81);
+  });
 });
 
 // ---- serialization.ts:71 — skip unknown tokens in OpenSudoku ----
@@ -158,6 +165,13 @@ describe('Sudaku wrapper branches', () => {
   it('difficulty for hard puzzle', () => {
     const d = sdk.difficulty(HARD);
     expect(d.score).toBeGreaterThan(50);
+  });
+
+  it('progressiveHint returns null for solved puzzle', () => {
+    const sol = sdk.solve(EASY).solution!;
+    const r = sdk.progressiveHint(sol);
+    expect(r.found).toBe(false);
+    expect(r.level1).toBeNull();
   });
 });
 
