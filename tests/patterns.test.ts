@@ -111,6 +111,13 @@ describe('Iterator Pattern — solveLogicIterator', () => {
     expect(count).toBe(5);
   });
 
+  it('works via Sudaku.solveLogicSteps()', () => {
+    const sdk = new Sudaku();
+    const steps = [...sdk.solveLogicSteps(EASY)];
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps[0].technique).toBeTruthy();
+  });
+
   it('can be spread into array', () => {
     const board = LogicBoard.fromPuzzle(EASY);
     const steps = [...solveLogicIterator(board)];
@@ -189,6 +196,12 @@ describe('Observer Pattern — Game Events', () => {
     }
 
     expect(events.some(e => e.type === 'complete')).toBe(true);
+  });
+
+  it('off() on non-existent event does nothing', () => {
+    const sdk = new Sudaku();
+    const game = sdk.createGame(EASY);
+    game.off('complete', () => {}); // no listeners registered — should not throw
   });
 
   it('off() removes listener', () => {
