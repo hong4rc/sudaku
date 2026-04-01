@@ -36,7 +36,7 @@
     "hint",
     "difficulty"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "author": "Hong4rc <hong4rc@gmail.com>",
   "repository": {
     "type": "git",

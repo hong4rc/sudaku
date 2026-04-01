@@ -73,4 +73,4 @@ Strategy, Chain of Responsibility, Iterator, Observer, Command, Memento, Facade,
 
 ## License
 
-MIT
+[AGPL-3.0](LICENSE) — If you use this library, your project must also be open source under a compatible license.
